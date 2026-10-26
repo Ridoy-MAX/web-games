@@ -22,10 +22,15 @@ export function send(res, status, data) {
 
 // Vercel pre-parses JSON bodies; the local Vite dev server doesn't.
 export async function readJson(req) {
-  if (req.body !== undefined) {
-    if (typeof req.body === 'string') return JSON.parse(req.body || '{}');
-    return req.body ?? {};
+  // Vercel's req.body getter throws on malformed JSON.
+  let body;
+  try {
+    body = req.body;
+    if (typeof body === 'string') body = JSON.parse(body || '{}');
+  } catch {
+    throw new HttpError(400, 'Invalid JSON body.');
   }
+  if (body !== undefined) return body ?? {};
   let raw = '';
   for await (const chunk of req) {
     raw += chunk;
