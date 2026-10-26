@@ -114,6 +114,7 @@ export const POSES = {
   flex: { hipsY: -0.05, spine: [-0.1, 0, 0], neck: [-0.15, 0, 0], lShoulder: [-0.1, 0, 1.5], lElbow: [-2.1, 0, 0], rShoulder: [-0.1, 0, -1.5], rElbow: [-2.1, 0, 0], lHip: [-0.1, 0, 0.2], rHip: [0.1, 0, -0.2] },
   phone: { hipsY: 0, spine: [0.05, 0, 0], neck: [0.1, 0.3, 0.1], lShoulder: [-0.4, 0, 0.45], lElbow: [-2.5, 0, 0], rShoulder: [-0.3, 0, 0.5], rElbow: [-1.5, 0, 0], lHip: [-0.1, 0, 0.1], rHip: [0.1, 0, -0.1] },
   bow: { hipsY: 0, spine: [0.6, 0, 0], neck: [0.3, 0, 0], lShoulder: [0.1, 0, 0.1], rShoulder: [-1.3, 0, 0.6], rElbow: [-1.6, 0, 0] },
+  getUp: { hipsY: -0.42, spine: [0.35, 0, 0], lHip: [-1.5, 0, 0.15], lKnee: [2.1, 0, 0], rHip: [-0.9, 0, -0.15], rKnee: [2.0, 0, 0] },
   shrug: { hipsY: 0, spine: [-0.05, 0, 0], neck: [0, 0, 0.25], lShoulder: [0.2, 0, 0.8], lElbow: [-1.6, 0, 0], rShoulder: [0.2, 0, -0.8], rElbow: [-1.6, 0, 0] },
 };
 
@@ -139,14 +140,16 @@ export class Animator {
     this.speed = speed;
   }
 
-  snap(name) {
+  snap(name, plant = true) {
     this.set(name);
     for (const j of JOINTS) this.cur[j] = [...(this.pose[j] ?? ZERO)];
     this.hipsY = this.pose.hipsY ?? 0;
     this.apply(0);
+    if (plant) this.body.plantFeet();
   }
 
-  update(dt, { walk = 0, breathe = true, dizzy = false } = {}) {
+  // plant: keep the feet on the ground (grounded states); airborne poses use hipsY.
+  update(dt, { walk = 0, breathe = true, dizzy = false, plant = false } = {}) {
     this.time += dt;
     const k = this.speed;
     for (const j of JOINTS) {
@@ -158,6 +161,7 @@ export class Animator {
     this.walk = damp(this.walk, walk, 10, dt);
     this.walkPhase += dt * 9 * Math.sign(walk || 1);
     this.apply(dt, breathe, dizzy);
+    if (plant) this.body.plantFeet();
   }
 
   apply(dt, breathe = true, dizzy = false) {

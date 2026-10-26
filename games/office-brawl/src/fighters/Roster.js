@@ -1,7 +1,8 @@
 // Every fighter: look (for Body), stats, two specials, a super, a funny K.O.
 // and some trash talk. Move kinds are implemented in Fighter.js / Hazards.js.
 
-const SKIN = { light: 0xf3c9a5, tan: 0xd9a066, brown: 0xa86b3c, deep: 0x7a4a2a, pale: 0xf7d9c4 };
+// Realistic skin tones.
+const SKIN = { light: 0xe6b996, tan: 0xc98f66, brown: 0x9a6340, deep: 0x5e3a24, pale: 0xf1cdb3 };
 
 export const ROSTER = [
   {
@@ -16,7 +17,7 @@ export const ROSTER = [
     power: 0.95,
     look: {
       skin: SKIN.tan, hair: 'messy', hairColor: 0x3b2414, top: 'hoodie', topColor: 0x7b46d6, shirt: 0x7b46d6,
-      pants: 0x3d5a80, shoes: 0xf2f2f2, sneakers: true, headphones: 0x222222, prop: 'energyDrink', blush: true,
+      pants: 0x34507a, jeans: true, shoes: 0xf2f2f2, sneakers: true, headphones: 0x222222, prop: 'energyDrink', eyes: 0x4a2e1a,
     },
     specials: [
       {
@@ -52,7 +53,7 @@ export const ROSTER = [
     reach: 1.1,
     look: {
       skin: SKIN.light, hair: 'bald', hairColor: 0x7a6a5a, beard: 0x6b5a4a, glasses: 'square', top: 'flannel', topHex: '#b3302b',
-      topColor: 0xb3302b, shirt: 0x333333, pants: 0x4a4a52, shoes: 0x5a3a22, prop: 'mug', belly: 0.4, width: 1.08,
+      topColor: 0xb3302b, shirt: 0x333333, pants: 0x4a4a52, jeans: true, shoes: 0x5a3a22, prop: 'mug', belly: 0.4, width: 1.08, eyes: 0x4f6f8f,
     },
     specials: [
       {
@@ -122,7 +123,7 @@ export const ROSTER = [
     power: 1,
     look: {
       skin: SKIN.pale, hair: 'bob', hairColor: 0x161212, top: 'blazer', topColor: 0x2a9d8f, lapel: 0x23867a, shirt: 0xffffff,
-      pants: 0x264653, shoes: 0x111111, prop: 'clipboard', lanyard: 0xe63946, blush: true,
+      pants: 0x264653, shoes: 0x111111, prop: 'clipboard', lanyard: 0xe63946, eyes: 0x3b2a1a,
     },
     specials: [
       {
@@ -157,7 +158,7 @@ export const ROSTER = [
     power: 1,
     look: {
       skin: SKIN.light, hair: 'side', hairColor: 0xd9b25c, top: 'fleece', topColor: 0x9ccfff, shirt: 0x9ccfff, vestColor: 0x59606b,
-      pants: 0xc2a878, shoes: 0x6b4226, prop: 'phone', earbuds: true,
+      pants: 0xc2a878, shoes: 0x6b4226, prop: 'phone', earbuds: true, eyes: 0x5b84b1,
     },
     specials: [
       {
@@ -226,7 +227,7 @@ export const ROSTER = [
     power: 0.92,
     look: {
       skin: SKIN.tan, hair: 'spiky', hairColor: 0xe0a100, top: 'tshirt', topColor: 0xff8c42, topHex: '#ff8c42', shirtText: '★',
-      sleeves: 'short', shirt: 0xff8c42, pants: 0x4a6fa5, shoes: 0xe63946, sneakers: true, prop: 'coffeeTray', lanyard: 0x3a86ff, scale: 0.94,
+      sleeves: 'short', shirt: 0xff8c42, pants: 0x4a6fa5, jeans: true, shoes: 0xe63946, sneakers: true, prop: 'coffeeTray', lanyard: 0x3a86ff, scale: 0.95,
     },
     specials: [
       {
@@ -263,7 +264,7 @@ export const ROSTER = [
     look: {
       skin: SKIN.light, hair: 'slick', hairColor: 0xe8e8e8, browColor: 0xbdbdbd, mustache: 0xe0e0e0, glasses: 'gold', top: 'suit',
       topColor: 0x1d2b53, lapel: 0x16213e, shirt: 0xffffff, tie: 0xd4a017, pocketSquare: 0xd4a017, pants: 0x1d2b53, shoes: 0x111111,
-      watch: true, prop: 'pen', belly: 0.6, width: 1.12, scale: 1.06,
+      watch: true, prop: 'pen', belly: 0.6, width: 1.12, scale: 1.04, eyes: 0x6b7f8f,
     },
     specials: [
       {

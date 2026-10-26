@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { Body } from './Body.js';
+import { BODY_HEIGHT, Body } from './Body.js';
 import { Animator } from './Poses.js';
+import { ClipAnimator, ModelBody, hasModel } from './Models.js';
 import { NORMALS } from './Moves.js';
 import { clamp, damp } from '../utils/math.js';
 import { mat, mesh } from '../utils/materials.js';
@@ -40,12 +41,14 @@ export class Fighter {
     this.game = game;
     this.def = def;
     this.slot = slot;
-    this.body = new Body(def.look);
-    this.anim = new Animator(this.body);
+    // Mixamo models when they're loaded, otherwise the built-in procedural body.
+    this.body = hasModel(def.id) ? new ModelBody(def.id, def.look) : new Body(def.look);
+    this.anim = this.body.animated ? new ClipAnimator(this.body) : new Animator(this.body);
     this.container = new THREE.Group();
     this.container.add(this.body.root);
     // Turned a little toward the camera so faces read in a side view.
-    this.body.root.rotation.y = Math.PI / 2 - 0.45;
+    // Mixamo's stances already open the body to the side, so models need less turn.
+    this.body.root.rotation.y = this.body.animated ? Math.PI / 2 - 0.12 : Math.PI / 2 - 0.45;
     game.scene.add(this.container);
     this.reach = def.reach ?? 1;
     this.scale = def.look.scale ?? 1;
@@ -69,7 +72,7 @@ export class Fighter {
       const s = mesh(new THREE.OctahedronGeometry(0.11, 0), mat(0xffe14d, { emissive: 0xffc800, emissiveIntensity: 0.8 }), { cast: false });
       g.add(s);
     }
-    g.position.y = 2.75;
+    g.position.y = BODY_HEIGHT * 1.06;
     g.visible = false;
     return g;
   }
@@ -135,12 +138,12 @@ export class Fighter {
 
   hurtbox() {
     const hw = 0.45 * this.scale;
-    const h = (this.crouching ? 1.55 : 2.45) * this.scale;
+    const h = (this.crouching ? 0.64 : 1) * BODY_HEIGHT * this.scale;
     return { x0: this.x - hw, x1: this.x + hw, y0: this.y, y1: this.y + h };
   }
 
   headPos(out = new THREE.Vector3()) {
-    return out.set(this.x, this.y + (this.crouching ? 2.0 : 2.75) * this.scale, 0);
+    return out.set(this.x, this.y + (this.crouching ? 0.78 : 1.06) * BODY_HEIGHT * this.scale, 0);
   }
 
   holdingBack() {
@@ -235,7 +238,7 @@ export class Fighter {
     if (!m.air) this.vx = 0;
     if (m.invuln) this.invuln = m.invuln;
     if (isSuper) this.invuln = Math.max(this.invuln, m.startup + 4);
-    this.anim.set(m.pose[0], m.startup <= 5 ? 30 : 20);
+    this.anim.set(m.pose[0], m.startup <= 5 ? 30 : 20, { duration: (m.startup + (m.active ?? 1) + m.recovery) / 60, restart: true });
     this.body.setExpression('effort');
     if (m.shout) {
       this.game.fx.bubble(m.shout, this, isSuper ? 'super' : 'special', 1.6);
@@ -307,7 +310,7 @@ export class Fighter {
         if (--this.stun <= 0) {
           this.state = 'getup';
           this.stun = 18;
-          this.anim.set('crouch', 10);
+          this.anim.set('getUp', 10, { duration: 0.32 });
         }
         break;
       case 'getup':
@@ -574,12 +577,15 @@ export class Fighter {
     const lying = st === 'down' || (st === 'ko' && this.y <= 0.01) || st === 'knockdown' || st === 'ko';
     const targetTilt = st === 'down' || (st === 'ko' && this.y <= 0.01) ? -1.45 : st === 'knockdown' || st === 'ko' ? -0.9 : 0;
     this.tilt = damp(this.tilt, targetTilt, lying ? 10 : 14, dt);
+    // Mixamo clips animate falling and lying down themselves.
+    if (this.body.animated) this.tilt = 0;
     this.body.body.rotation.x = this.tilt;
     this.body.body.position.y = this.tilt < -1 ? 0.25 : 0;
     this.body.body.rotation.y = this.spin;
     if (this.spin && !(st === 'attack' && this.move?.spin)) this.spin = damp(this.spin, 0, 8, dt);
     const walking = st === 'walk' ? Math.sign(this.vx) * this.facing * Math.min(1, Math.abs(this.vx) / 2) : 0;
-    this.anim.update(dt, { walk: walking, breathe: st === 'idle' || st === 'walk', dizzy: st === 'dizzy' });
+    const planted = this.y <= 0.01 && !['knockdown', 'ko', 'down', 'gag', 'gone', 'grabbed'].includes(st) && !(st === 'attack' && this.move?.air);
+    this.anim.update(dt, { walk: walking, breathe: st === 'idle' || st === 'walk', dizzy: st === 'dizzy', plant: planted });
     if (this.stars.visible) {
       this.stars.children.forEach((s, i) => {
         const a = this.anim.time * 5 + (i / 3) * Math.PI * 2;

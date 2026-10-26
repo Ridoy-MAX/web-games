@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Body } from '../fighters/Body.js';
 import { Animator } from '../fighters/Poses.js';
+import { ClipAnimator, ModelBody, hasModels, modelIds } from '../fighters/Models.js';
 import { mat, mesh } from '../utils/materials.js';
 import { pick, rand } from '../utils/math.js';
 
@@ -135,7 +136,7 @@ function waterCooler() {
 
 const CROWD_TOPS = ['blazer', 'hoodie', 'tshirt', 'cardigan', 'fleece', 'suit'];
 const CROWD_HAIR = ['messy', 'bob', 'bun', 'ponytail', 'slick', 'side', 'bald', 'spiky'];
-const SKINS = [0xf3c9a5, 0xd9a066, 0xa86b3c, 0x7a4a2a, 0xf7d9c4];
+const SKINS = [0xe9bf9f, 0xd6a07c, 0xb07a55, 0x8a5636, 0x5e3a24, 0xf0cdb4];
 
 function crowdLook(formal) {
   const top = formal ? pick(['suit', 'blazer']) : pick(CROWD_TOPS);
@@ -152,8 +153,10 @@ class Crowd {
   constructor(parent, count, formal, zBase) {
     this.members = [];
     for (let i = 0; i < count; i++) {
-      const body = new Body(crowdLook(formal));
-      const anim = new Animator(body);
+      const models = hasModels();
+      const body = models ? new ModelBody(pick(modelIds()), { scale: rand(0.9, 0.97) }) : new Body(crowdLook(formal));
+      body.setShadows(false);
+      const anim = models ? new ClipAnimator(body) : new Animator(body);
       anim.snap('neutral');
       body.root.position.set(-9 + (18 / (count - 1)) * i + rand(-0.4, 0.4), 0, zBase + rand(-0.5, 0.4));
       body.root.rotation.y = rand(-0.3, 0.3);
@@ -174,7 +177,7 @@ class Crowd {
         m.pose = want;
         m.anim.set(want, 8);
       }
-      m.anim.update(dt, { breathe: true });
+      m.anim.update(dt, { breathe: true, plant: true });
       m.phase += dt * (3 + m.excite * 8);
       m.body.root.position.y = m.excite > 0.3 ? Math.abs(Math.sin(m.phase)) * 0.25 : 0;
     }
@@ -183,8 +186,10 @@ class Crowd {
 
 // Three stages. Only the active one is visible.
 export class Arena {
-  constructor(scene) {
+  constructor(scene, lowQuality = false) {
     this.scene = scene;
+    // Fewer background coworkers on phones and slower machines.
+    this.crowdScale = lowQuality ? 0.55 : 1;
     this.stages = {};
     this.current = null;
     this.leds = [];
@@ -282,7 +287,7 @@ export class Arena {
       light.position.set(x, 7.5, -2);
       group.add(light);
     }
-    const crowd = new Crowd(group, 8, false, -5.4);
+    const crowd = new Crowd(group, Math.round(8 * this.crowdScale), false, -5.4);
     return { group, crowd, light: { hemi: [0xfff7e8, 0x6b6f7a, 1.4], sun: [0xfff2d8, 2.2], bg: 0xcfe9ff, fog: 0xdfe9f2 } };
   }
 
@@ -330,7 +335,7 @@ export class Arena {
       glow.position.set(x, 4, -2);
       group.add(glow);
     }
-    const crowd = new Crowd(group, 6, false, -3.9);
+    const crowd = new Crowd(group, Math.round(6 * this.crowdScale), false, -3.9);
     return { group, crowd, light: { hemi: [0xa8b8ff, 0x2a3048, 1.6], sun: [0xd0dcff, 2.0], bg: 0x0f1424, fog: 0x141a2e } };
   }
 
@@ -366,7 +371,7 @@ export class Arena {
     const chart = mesh(new THREE.PlaneGeometry(3, 1.9), new THREE.MeshBasicMaterial({ map: textBoard(['📈 +420%', 'BONUSES: MINE', 'RAISES: NO'], { bg: '#10142b', fg: '#7ef0c0', title: 'Q4 PROFITS', titleColor: '#ffd23f' }) }), { cast: false });
     chart.position.set(-12.2, 4.2, -6.83);
     group.add(chart);
-    const crowd = new Crowd(group, 7, true, -4.0);
+    const crowd = new Crowd(group, Math.round(7 * this.crowdScale), true, -4.0);
     return { group, crowd, light: { hemi: [0xffe0c0, 0x3a2416, 1.3], sun: [0xffb37a, 2.4], bg: 0xffc79a, fog: 0xffd2b0 } };
   }
 

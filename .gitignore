@@ -4,3 +4,4 @@ dist/
 data/
 .vercel/
 .env*
+raw-models/

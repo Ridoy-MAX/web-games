@@ -1,5 +1,6 @@
 import './styles.css';
 import { Game } from './game/Game.js';
+import { loadModels } from './fighters/Models.js';
 import { fetchMe, getSession } from '../../../src/shared/session.js';
 
 const GAME_ID = 'office-brawl';
@@ -32,4 +33,7 @@ function boot() {
 }
 
 const fonts = document.fonts?.ready ?? Promise.resolve();
-Promise.race([fonts, new Promise((r) => setTimeout(r, 1500))]).then(boot);
+const label = document.querySelector('#loading p');
+// Load the 3D employees; if they're missing, the game falls back to built-in bodies.
+const models = loadModels((p) => (label.textContent = `Hiring employees… ${Math.round(p * 100)}%`)).catch((err) => console.warn('Character models unavailable, using built-in bodies.', err));
+Promise.all([models, Promise.race([fonts, new Promise((r) => setTimeout(r, 1500))])]).then(boot);

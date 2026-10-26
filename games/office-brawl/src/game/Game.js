@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { Match } from './Match.js';
 import { jobTitle } from './Titles.js';
 import { Combat } from '../fighters/Combat.js';
@@ -55,11 +56,16 @@ export class Game {
     r.shadowMap.enabled = true;
     r.shadowMap.type = this.low ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
     r.toneMapping = THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.05;
+    r.toneMappingExposure = 0.95;
     r.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer = r;
 
     this.scene = new THREE.Scene();
+    // Soft image-based lighting so skin, fabric and metal shade naturally.
+    const pmrem = new THREE.PMREMGenerator(r);
+    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environmentIntensity = 0.3;
+    pmrem.dispose();
     this.camera = new THREE.PerspectiveCamera(36, 1, 0.1, 200);
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x666666, 1.4);
     this.scene.add(this.hemi);
@@ -79,7 +85,7 @@ export class Game {
     this.fx = new Effects(this.scene, document.getElementById('fx-layer'), this.low);
     this.hazards = new Hazards(this);
     this.combat = new Combat(this);
-    this.arena = new Arena(this.scene);
+    this.arena = new Arena(this.scene, this.low);
     this.human = new HumanController();
     this.human.onPause = () => this.togglePause();
     this.hud = new HUD();
@@ -256,7 +262,7 @@ export class Game {
     const [hc, gc, hi] = s.light.hemi;
     this.hemi.color.setHex(hc);
     this.hemi.groundColor.setHex(gc);
-    this.hemi.intensity = hi;
+    this.hemi.intensity = hi * 0.7;
     this.sun.color.setHex(s.light.sun[0]);
     this.sun.intensity = s.light.sun[1];
     this.scene.background = new THREE.Color(s.light.bg);
