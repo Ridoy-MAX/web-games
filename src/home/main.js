@@ -450,6 +450,41 @@ document.querySelectorAll('[data-play]').forEach((a) =>
   }),
 );
 
+// ---------- gameplay previews -------------------------------------------------------
+
+// Hovering a game card plays a short gameplay clip over its thumbnail. Touch screens
+// have no hover, so there the card in view plays instead. Clips load only when first needed.
+function setupPreviews() {
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || navigator.connection?.saveData) return;
+  const thumbs = [...document.querySelectorAll('.thumb')].filter((t) => t.querySelector('.thumb-video'));
+  const play = (thumb) => {
+    const video = thumb.querySelector('.thumb-video');
+    if (!video.src) video.src = video.dataset.src;
+    video.onplaying = () => thumb.classList.add('playing');
+    video.play().catch(() => {});
+  };
+  const stop = (thumb) => {
+    const video = thumb.querySelector('.thumb-video');
+    thumb.classList.remove('playing');
+    video.pause();
+  };
+
+  if (matchMedia('(hover: hover)').matches) {
+    for (const thumb of thumbs) {
+      const card = thumb.closest('.game-card');
+      card.addEventListener('pointerenter', () => play(thumb));
+      card.addEventListener('pointerleave', () => stop(thumb));
+    }
+    return;
+  }
+  const seen = new IntersectionObserver(
+    (entries) => entries.forEach((e) => (e.isIntersecting ? play(e.target) : stop(e.target))),
+    { threshold: 0.7 },
+  );
+  thumbs.forEach((t) => seen.observe(t));
+}
+setupPreviews();
+
 // ---------- leaderboard -------------------------------------------------------------
 
 let boardGame = 'cow-vs-ufo';
