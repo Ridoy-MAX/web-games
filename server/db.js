@@ -47,16 +47,65 @@ const SCHEMA = [
   )`,
   'CREATE INDEX IF NOT EXISTS idx_progress_game_best ON progress (game, best_score DESC)',
   'CREATE INDEX IF NOT EXISTS idx_scores_user ON scores (user_id, game)',
+  // One row per signed-in device. users.token_hash is the pre-password session
+  // token, kept only because the column is NOT NULL UNIQUE.
+  `CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_used_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  'CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions (user_id)',
+  `CREATE TABLE IF NOT EXISTS migrations (
+    name TEXT PRIMARY KEY,
+    applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
 ];
+
+const USER_COLUMNS = {
+  password_hash: 'TEXT',
+  failed_logins: 'INTEGER NOT NULL DEFAULT 0',
+  locked_until: 'TEXT',
+};
+
+// Additive, idempotent migrations: safe to run on every cold start against the
+// live database, and safe if two instances race each other.
+async function migrate(c) {
+  await c.batch(SCHEMA, 'write');
+  const { rows } = await c.execute('PRAGMA table_info(users)');
+  const have = new Set(rows.map((r) => r.name));
+  for (const [name, type] of Object.entries(USER_COLUMNS)) {
+    if (have.has(name)) continue;
+    try {
+      await c.execute(`ALTER TABLE users ADD COLUMN ${name} ${type}`);
+    } catch (err) {
+      if (!/duplicate column/i.test(err.message)) throw err;
+    }
+  }
+  // Pre-password players keep their existing token as their first session.
+  await c.batch(
+    [
+      `INSERT OR IGNORE INTO sessions (user_id, token_hash, created_at, last_used_at)
+       SELECT id, token_hash, created_at, created_at FROM users
+       WHERE NOT EXISTS (SELECT 1 FROM migrations WHERE name = 'legacy-sessions')`,
+      "INSERT OR IGNORE INTO migrations (name) VALUES ('legacy-sessions')",
+    ],
+    'write',
+  );
+}
 
 let client;
 let ready;
 
-// One client per (warm) function instance; schema is applied once.
+// One client per (warm) function instance; schema and migrations run once.
 export function db() {
   if (!client) {
     client = createClient({ url: resolveUrl(), authToken: process.env.TURSO_AUTH_TOKEN });
-    ready = client.batch(SCHEMA, 'write');
+    ready = migrate(client).catch((err) => {
+      client = undefined; // retry on the next request instead of failing forever
+      throw err;
+    });
   }
   return ready.then(() => client);
 }

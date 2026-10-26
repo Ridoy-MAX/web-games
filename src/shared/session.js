@@ -1,6 +1,6 @@
 // Player session + API client shared by the home page and every game.
-// The session token is created by the server when a username is claimed and
-// lives in localStorage on this device.
+// The session token is issued by the server on signup or login and lives in
+// localStorage on this device. Each device gets its own token.
 const KEY = 'webgames.session';
 
 function readStore() {
@@ -45,7 +45,7 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   if (body) headers['Content-Type'] = 'application/json';
   if (auth) {
     const s = getSession();
-    if (!s) throw new ApiError('Create a username first.', 401, 'NO_SESSION');
+    if (!s) throw new ApiError('Create a player or log in first.', 401, 'NO_SESSION');
     headers.Authorization = `Bearer ${s.token}`;
   }
   let res;
@@ -69,11 +69,27 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
 
 export const checkUsername = (username) => api(`username-check?username=${encodeURIComponent(username)}`);
 
-export async function createUser(username) {
-  const data = await api('users', { method: 'POST', body: { username } });
+function signedIn(data) {
   saveSession({ username: data.user.username, token: data.token });
   return data;
 }
+
+export const createUser = async (username, password) => signedIn(await api('users', { method: 'POST', body: { username, password } }));
+export const login = async (username, password) => signedIn(await api('session', { method: 'POST', body: { username, password } }));
+
+// Logs out this device only. The local session is cleared even if the server is unreachable.
+export async function logout() {
+  try {
+    if (getSession()) await api('session', { method: 'DELETE', auth: true });
+  } catch {
+    /* token already invalid or offline: forgetting it locally is enough */
+  } finally {
+    clearSession();
+  }
+}
+
+export const setPassword = (newPassword, currentPassword) =>
+  api('password', { method: 'POST', body: { newPassword, currentPassword }, auth: true });
 
 export const fetchMe = () => api('me', { auth: true });
 export const submitScore = (run) => api('scores', { method: 'POST', body: run, auth: true });

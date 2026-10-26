@@ -43,6 +43,7 @@ export default defineConfig({
       input: {
         main: resolve(root, 'index.html'),
         cowVsUfo: resolve(root, 'games/cow-vs-ufo/index.html'),
+        officeBrawl: resolve(root, 'games/office-brawl/index.html'),
       },
     },
   },

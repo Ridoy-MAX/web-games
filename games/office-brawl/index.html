@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b2f">
+  <title>Office Brawl · Fight for the Corner Office</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥊</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Bangers&family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="Office Brawl"></canvas>
+    <div id="fx-layer" aria-hidden="true"></div>
+    <div id="vignette" aria-hidden="true"></div>
+
+    <!-- Super move flash -->
+    <div id="flash" class="flash" aria-hidden="true">
+      <div class="flash-band"><span class="flash-kicker">SUPER MOVE</span><span class="flash-name"></span></div>
+    </div>
+
+    <!-- Fight HUD -->
+    <div id="hud" class="hidden">
+      <div class="bars">
+        <div class="side p1">
+          <img class="portrait" id="p1-portrait" alt="">
+          <div class="info">
+            <div class="name"><b id="p1-name"></b><small id="p1-role"></small></div>
+            <div class="hp"><div class="hp-trail" id="p1-trail"></div><div class="hp-fill" id="p1-hp"></div></div>
+            <div class="pips" id="p1-pips"></div>
+          </div>
+        </div>
+        <div class="timer" id="timer">60</div>
+        <div class="side p2">
+          <img class="portrait" id="p2-portrait" alt="">
+          <div class="info">
+            <div class="name"><b id="p2-name"></b><small id="p2-role"></small></div>
+            <div class="hp"><div class="hp-trail" id="p2-trail"></div><div class="hp-fill" id="p2-hp"></div></div>
+            <div class="pips" id="p2-pips"></div>
+          </div>
+        </div>
+      </div>
+      <div class="hud-sub">
+        <span id="hud-title" class="hud-title"></span>
+        <span id="hud-score" class="hud-score"></span>
+      </div>
+      <div class="meters">
+        <div class="meter p1"><span class="m-label" id="p1-mlabel">☕ CAFFEINE</span><div class="m-bar"><div class="m-fill" id="p1-meter"></div></div></div>
+        <div class="meter p2"><span class="m-label" id="p2-mlabel">☕ CAFFEINE</span><div class="m-bar"><div class="m-fill" id="p2-meter"></div></div></div>
+      </div>
+      <div id="combo-p1" class="combo left"></div>
+      <div id="combo-p2" class="combo right"></div>
+      <div id="announce" class="announce"><div class="big"></div><div class="small"></div></div>
+      <button id="btn-pause" class="icon-btn pause-btn" aria-label="Pause">⏸</button>
+    </div>
+
+    <!-- Touch controls -->
+    <div id="touch" class="hidden">
+      <div id="stick" class="stick" aria-label="Move">
+        <div id="knob" class="knob"><span id="knob-face">😐</span></div>
+        <span class="stick-label">STRESS BALL</span>
+      </div>
+      <div class="pad">
+        <button class="tbtn lp" data-act="lp"><span class="ti">✋</span><span class="tt">SLAP</span></button>
+        <button class="tbtn hk" data-act="hk"><span class="ti">🦶</span><span class="tt">KICK</span></button>
+        <button class="tbtn s1" data-act="s1"><span class="ti">✨</span><span class="tt" id="t-s1">SP1</span></button>
+        <button class="tbtn s2" data-act="s2"><span class="ti">💥</span><span class="tt" id="t-s2">SP2</span></button>
+        <button class="tbtn sup" data-act="sup" id="t-sup"><span class="ti">☕</span><span class="tt">OVERTIME</span></button>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <section id="title" class="screen">
+      <div class="title-wrap">
+        <div class="logo">
+          <span class="logo-top">OFFICE</span>
+          <span class="logo-bottom">BRAWL</span>
+          <span class="logo-tag">Fight for the Corner Office</span>
+        </div>
+        <div class="player-bar">
+          <span class="pb-who"><small>Clocked in as</small><b id="pb-name">…</b><span id="pb-title" class="pb-title"></span></span>
+          <button class="chip" data-action="home">🏠 All games</button>
+        </div>
+        <div class="menu">
+          <button class="mbtn primary" data-action="career" id="btn-career">🏢 Career Mode <small>Climb the org chart</small></button>
+          <button class="mbtn" data-action="quick">⚡ Quick Match <small>Any fighter, any rival</small></button>
+          <div class="mrow">
+            <button class="mbtn small" data-action="moves">📖 How to play</button>
+            <button class="mbtn small" data-action="settings">⚙️ Settings</button>
+          </div>
+        </div>
+        <p class="best">Best career score: <b id="best-score">0</b> · Highest rank reached: <b id="best-stage">–</b></p>
+        <p id="offline" class="offline hidden"></p>
+      </div>
+    </section>
+
+    <!-- Character select -->
+    <section id="select" class="screen">
+      <header class="sel-head">
+        <button class="chip" data-action="back">← Back</button>
+        <h2 id="sel-title">CHOOSE YOUR EMPLOYEE</h2>
+        <span class="sel-step" id="sel-step">Step 1 of 2</span>
+      </header>
+      <div class="sel-body">
+        <div class="roster" id="roster"></div>
+        <aside class="sel-info" id="sel-info">
+          <div class="si-head"><b id="si-name"></b><small id="si-role"></small></div>
+          <p id="si-bio" class="si-bio"></p>
+          <div class="stats" id="si-stats"></div>
+          <ul class="si-moves" id="si-moves"></ul>
+          <button class="mbtn primary" data-action="confirm" id="sel-confirm">Clock in ▶</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Career ladder -->
+    <section id="career" class="screen">
+      <div class="panel wide">
+        <h2>THE ORG CHART</h2>
+        <p class="muted">Beat everyone above you. The Chairman waits at the top.</p>
+        <ol class="ladder" id="ladder"></ol>
+        <div class="row-btns">
+          <button class="mbtn" data-action="title">Quit career</button>
+          <button class="mbtn primary" data-action="fight">Fight! ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Versus -->
+    <section id="vs" class="screen">
+      <div class="vs-wrap">
+        <div class="vs-side left"><img id="vs-p1" alt=""><b id="vs-n1"></b><small id="vs-r1"></small></div>
+        <div class="vs-mid"><span class="vs-word">VS</span><span id="vs-tag" class="vs-tag"></span><span id="vs-stage" class="vs-stage"></span></div>
+        <div class="vs-side right"><img id="vs-p2" alt=""><b id="vs-n2"></b><small id="vs-r2"></small></div>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="results" class="screen">
+      <div class="panel">
+        <h2 id="res-title">YOU WIN</h2>
+        <p id="res-line" class="res-line"></p>
+        <ul class="res-stats" id="res-stats"></ul>
+        <div class="res-score"><small>Score</small><b id="res-score">0</b></div>
+        <p class="res-earned">Job title: <b id="res-rank"></b></p>
+        <p class="save-status" id="save-status"></p>
+        <div class="row-btns" id="res-btns"></div>
+      </div>
+    </section>
+
+    <!-- Pause -->
+    <section id="pause" class="screen">
+      <div class="panel narrow">
+        <h2>OUT TO LUNCH</h2>
+        <p class="muted">The fight will be here when you get back.</p>
+        <button class="mbtn primary" data-action="resume">Resume</button>
+        <button class="mbtn" data-action="moves">Move list</button>
+        <button class="mbtn" data-action="settings">Settings</button>
+        <button class="mbtn danger" data-action="title">Quit to title</button>
+      </div>
+    </section>
+
+    <!-- Moves / how to play -->
+    <section id="moves" class="screen">
+      <div class="panel wide">
+        <h2>EMPLOYEE HANDBOOK</h2>
+        <div class="controls">
+          <div><kbd>A</kbd><kbd>D</kbd> move · <kbd>W</kbd> jump · <kbd>S</kbd> crouch</div>
+          <div><kbd>J</kbd> slap · <kbd>K</kbd> kick · <kbd>U</kbd> special 1 · <kbd>I</kbd> special 2 · <kbd>O</kbd> super</div>
+          <div>Hold <b>away</b> to block. Crouch-block low attacks. Air attacks must be blocked standing.</div>
+          <div>Land a slap, then press kick or a special to <b>combo</b>. Fill the ☕ Caffeine meter for an <b>OVERTIME</b> super.</div>
+        </div>
+        <div id="movelist" class="movelist"></div>
+        <button class="mbtn primary" data-action="back">Got it</button>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="screen">
+      <div class="panel narrow">
+        <h2>SETTINGS</h2>
+        <label class="row"><span>Sound effects</span><input type="checkbox" id="set-sound"></label>
+        <label class="row"><span>Music</span><input type="checkbox" id="set-music"></label>
+        <label class="row"><span>Announcer voice</span><input type="checkbox" id="set-voice"></label>
+        <label class="row"><span>Volume</span><input type="range" id="set-volume" min="0" max="1" step="0.05"></label>
+        <label class="row"><span>Difficulty</span>
+          <select id="set-diff"><option value="easy">Intern (easy)</option><option value="normal">Employee (normal)</option><option value="hard">Executive (hard)</option></select>
+        </label>
+        <label class="row"><span>Graphics</span>
+          <select id="set-quality"><option value="auto">Auto</option><option value="high">High</option><option value="low">Low</option></select>
+        </label>
+        <button class="mbtn primary" data-action="back">Done</button>
+      </div>
+    </section>
+
+    <div id="rotate-hint" class="rotate-hint hidden">📱↻ Turn your phone sideways for the full brawl</div>
+    <div id="loading" class="loading"><div class="spin">🥊</div><p>Scheduling the meeting…</p></div>
+    <div id="error" class="loading hidden"><p>WebGL isn't available, so the office is closed. Try another browser.</p></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

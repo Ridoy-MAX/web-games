@@ -1,7 +1,8 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { promisify } from 'node:util';
 import { db } from './db.js';
 
-export const GAMES = new Set(['cow-vs-ufo']);
+export const GAMES = new Set(['cow-vs-ufo', 'office-brawl']);
 export const USERNAME_RE = /^[A-Za-z][A-Za-z0-9_]{2,15}$/;
 const RESERVED = new Set(['admin', 'administrator', 'root', 'system', 'moderator', 'support', 'null', 'undefined', 'anonymous', 'guest']);
 
@@ -58,13 +59,63 @@ export function validateUsername(name) {
   return null;
 }
 
+// ---------- passwords ----------
+// Stored as scrypt$N$r$p$salt$hash (base64). Never log or return these.
+const scryptAsync = promisify(scrypt);
+const SCRYPT = { N: 16384, r: 8, p: 1, keylen: 32 };
+export const PASSWORD_MIN = 8;
+export const PASSWORD_MAX = 72;
+
+export function validatePassword(password, username = '') {
+  if (typeof password !== 'string' || !password) return 'Pick a password.';
+  if (password.length < PASSWORD_MIN) return `Use at least ${PASSWORD_MIN} characters. Cows can count that high.`;
+  if (password.length > PASSWORD_MAX) return `Keep it under ${PASSWORD_MAX + 1} characters. This isn't a novel.`;
+  if (username && password.toLowerCase() === String(username).trim().toLowerCase()) return "Your password can't be your player name. Nice try.";
+  return null;
+}
+
+export async function hashPassword(password) {
+  const { N, r, p, keylen } = SCRYPT;
+  const salt = randomBytes(16);
+  const hash = await scryptAsync(password, salt, keylen, { N, r, p });
+  return ['scrypt', N, r, p, salt.toString('base64'), hash.toString('base64')].join('$');
+}
+
+export async function verifyPassword(password, stored) {
+  const [algo, N, r, p, salt, hash] = String(stored || '').split('$');
+  if (algo !== 'scrypt' || !salt || !hash) return false;
+  const expected = Buffer.from(hash, 'base64');
+  const actual = await scryptAsync(password, Buffer.from(salt, 'base64'), expected.length, { N: Number(N), r: Number(r), p: Number(p) });
+  return timingSafeEqual(actual, expected);
+}
+
+// Burns the same CPU as a real check, so "no such user" isn't faster than "wrong password".
+const DUMMY_HASH = hashPassword(randomBytes(12).toString('hex'));
+export const fakeVerify = async (password) => verifyPassword(String(password), await DUMMY_HASH).then(() => false);
+
+// ---------- sessions ----------
+export async function createSession(client, userId) {
+  const token = newToken();
+  await client.execute({ sql: 'INSERT INTO sessions (user_id, token_hash) VALUES (?, ?)', args: [userId, hashToken(token)] });
+  return token;
+}
+
 export async function requireUser(req) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-  if (!token) throw new HttpError(401, 'Sign in with a username first.', 'NO_SESSION');
+  if (!token) throw new HttpError(401, 'Sign in first.', 'NO_SESSION');
   const client = await db();
-  const { rows } = await client.execute({ sql: 'SELECT id, username, created_at FROM users WHERE token_hash = ?', args: [hashToken(token)] });
-  if (!rows.length) throw new HttpError(401, 'Your session expired. Create a username again.', 'BAD_SESSION');
+  const { rows } = await client.execute({
+    sql: `SELECT u.id, u.username, u.created_at, u.password_hash IS NOT NULL AS has_password, s.id AS session_id
+          FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token_hash = ?`,
+    args: [hashToken(token)],
+  });
+  if (!rows.length) throw new HttpError(401, 'Your session expired. Log in again.', 'BAD_SESSION');
+  // At most one write a minute per device; a hot game loop shouldn't hammer the DB.
+  await client.execute({
+    sql: "UPDATE sessions SET last_used_at = datetime('now') WHERE id = ? AND last_used_at < datetime('now', '-1 minute')",
+    args: [rows[0].session_id],
+  });
   return rows[0];
 }
 
@@ -78,7 +129,8 @@ export function handler(methods) {
     }
     try {
       const out = await fn(req, res);
-      if (!res.writableEnded) send(res, 200, out ?? {});
+      // Handlers may set res.statusCode (e.g. 201) before returning their body.
+      if (!res.writableEnded) send(res, res.statusCode || 200, out ?? {});
     } catch (err) {
       if (err instanceof HttpError) return send(res, err.status, { error: err.message, code: err.code });
       console.error(err);

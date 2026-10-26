@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Ridiculous browser games with serious leaderboards. Create a player name and start playing instantly.">
+  <meta name="description" content="Ridiculous browser games with serious leaderboards. Create a player, pick a game and start playing instantly.">
   <meta name="theme-color" content="#0d1024">
   <title>Web Games · Ridiculous games, serious leaderboards</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐄</text></svg>">
@@ -24,6 +24,7 @@
       <a href="#leaderboard">Leaderboard</a>
     </nav>
     <div id="player-slot" class="player-slot">
+      <button class="btn btn-ghost btn-sm" data-open-login>Log in</button>
       <button class="btn btn-primary btn-sm" data-open-signup>Create player</button>
     </div>
   </header>
@@ -33,14 +34,14 @@
       <div class="hero-copy">
         <p class="eyebrow"><span class="dot"></span> Free · No downloads · Works on phones</p>
         <h1>Ridiculous games.<br><span class="grad">Serious leaderboards.</span></h1>
-        <p class="lead">Pick a player name, jump into a game, and fight your way up the rankings. Your scores and unlocked levels are saved to your name.</p>
+        <p class="lead">Create a player, jump into a game, and fight your way up the rankings. Your scores and unlocked levels follow you to any device you log in on.</p>
         <div class="hero-cta">
           <a class="btn btn-primary btn-lg" href="/games/cow-vs-ufo/" data-play="cow-vs-ufo">▶ Play Cow vs UFO</a>
-          <a class="btn btn-ghost btn-lg" href="#leaderboard">View leaderboard</a>
+          <a class="btn btn-ghost btn-lg" href="/games/office-brawl/" data-play="office-brawl">🥊 Play Office Brawl</a>
         </div>
         <dl class="stats">
           <div><dt>Players</dt><dd id="stat-players">–</dd></div>
-          <div><dt>Games</dt><dd>1</dd></div>
+          <div><dt>Games</dt><dd>2</dd></div>
           <div><dt>Cows harmed</dt><dd>0<sup>*</sup></dd></div>
         </dl>
         <p class="footnote">*Emotionally, maybe a few.</p>
@@ -60,8 +61,9 @@
       <div class="games-grid">
         <article class="game-card featured">
           <a class="thumb" href="/games/cow-vs-ufo/" data-play="cow-vs-ufo" aria-label="Play Cow vs UFO">
+            <span class="thumb-fallback" aria-hidden="true">🐄🛸</span>
             <img src="/thumbnails/cow-vs-ufo.jpg" alt="A cartoon cow on a floating farm island under a UFO" loading="lazy" onerror="this.remove()">
-            <span class="badge">NEW</span>
+            <span class="badge">HOT</span>
           </a>
           <div class="card-body">
             <div class="card-title">
@@ -71,6 +73,22 @@
             <p>You are a cow. A UFO wants you. Eat snacks, dodge tractor beams, flying anvils and a giant revenge chicken.</p>
             <div class="card-progress" id="progress-cow-vs-ufo" hidden></div>
             <a class="btn btn-primary" href="/games/cow-vs-ufo/" data-play="cow-vs-ufo">Play now</a>
+          </div>
+        </article>
+        <article class="game-card featured">
+          <a class="thumb thumb-brawl" href="/games/office-brawl/" data-play="office-brawl" aria-label="Play Office Brawl">
+            <span class="thumb-fallback" aria-hidden="true">💼🥊</span>
+            <img src="/thumbnails/office-brawl.jpg" alt="Office workers squaring off for a fight between the cubicles" loading="lazy" onerror="this.remove()">
+            <span class="badge">NEW</span>
+          </a>
+          <div class="card-body">
+            <div class="card-title">
+              <h3>Office Brawl</h3>
+              <span class="tags"><span>3D</span><span>Fighting</span><span>📱 Mobile</span></span>
+            </div>
+            <p>A Street Fighter-style showdown on the office floor. HR, QA, the Chairman and the senior and junior devs settle every meeting that could have been an email.</p>
+            <div class="card-progress" id="progress-office-brawl" hidden></div>
+            <a class="btn btn-primary" href="/games/office-brawl/" data-play="office-brawl">Play now</a>
           </div>
         </article>
         <article class="game-card soon">
@@ -93,11 +111,15 @@
     <section id="leaderboard" class="section">
       <div class="section-head">
         <h2>Leaderboard</h2>
-        <p>Cow vs UFO · top 10 all-time</p>
+        <p id="board-caption">Cow vs UFO · top 10 all-time</p>
       </div>
-      <div class="board">
+      <div class="tabs board-tabs" role="tablist" aria-label="Leaderboard game">
+        <button type="button" role="tab" id="tab-cow-vs-ufo" data-board="cow-vs-ufo" aria-controls="board" aria-selected="true">🐄 Cow vs UFO</button>
+        <button type="button" role="tab" id="tab-office-brawl" data-board="office-brawl" aria-controls="board" aria-selected="false" tabindex="-1">🥊 Office Brawl</button>
+      </div>
+      <div class="board" id="board" role="tabpanel" aria-labelledby="tab-cow-vs-ufo">
         <table>
-          <thead><tr><th>#</th><th>Player</th><th class="hide-sm">Title</th><th class="num">Level</th><th class="num">Best score</th></tr></thead>
+          <thead id="board-head"><tr><th>#</th><th>Player</th><th class="hide-sm">Title</th><th class="num">Level</th><th class="num">Best score</th></tr></thead>
           <tbody id="board-body"><tr><td colspan="5" class="muted center">Loading the hall of fame…</td></tr></tbody>
         </table>
       </div>
@@ -108,19 +130,42 @@
     <p>Made with three.js, SQLite and an unreasonable amount of cow puns.</p>
   </footer>
 
-  <!-- Create player dialog -->
+  <!-- Create player / log in dialog -->
   <dialog id="signup" class="modal" aria-labelledby="signup-title">
     <form id="signup-form" method="dialog" novalidate>
       <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
-      <div class="modal-icon">🐮</div>
+      <div class="modal-icon" id="signup-icon">🐮</div>
       <h2 id="signup-title">Create your player</h2>
-      <p class="muted">Your scores and unlocked levels are saved under this name. Names are unique, so choose wisely.</p>
+      <p class="muted" id="signup-lead">Your scores and unlocked levels are saved under this name. Names are unique, so choose wisely.</p>
+      <div class="tabs auth-tabs" role="tablist" aria-label="Account">
+        <button type="button" role="tab" id="mode-create" data-mode="create" aria-selected="true">Create player</button>
+        <button type="button" role="tab" id="mode-login" data-mode="login" aria-selected="false" tabindex="-1">Log in</button>
+      </div>
+
       <label for="username" class="label">Player name</label>
       <div class="input-row">
-        <input id="username" name="username" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="16" placeholder="e.g. SirMoosalot42" required>
+        <input id="username" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" maxlength="16" placeholder="e.g. SirMoosalot42" aria-describedby="username-hint" required>
         <button type="button" class="btn btn-ghost btn-sm" id="suggest" title="Suggest a silly name">🎲 Suggest</button>
       </div>
       <p id="username-hint" class="hint">3–16 letters, numbers or _, starting with a letter.</p>
+
+      <label for="password" class="label">Password</label>
+      <div class="input-row">
+        <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" aria-describedby="password-hint" required>
+        <button type="button" class="btn btn-ghost btn-sm reveal" data-reveal="password" aria-controls="password" aria-pressed="false">Show</button>
+      </div>
+      <div class="strength" id="strength" aria-hidden="true"><i></i></div>
+      <p id="password-hint" class="hint">At least 8 characters. Longer is stronger.</p>
+
+      <div id="confirm-group">
+        <label for="password-confirm" class="label">Confirm password</label>
+        <div class="input-row">
+          <input id="password-confirm" name="password-confirm" type="password" autocomplete="new-password" maxlength="72" aria-describedby="confirm-hint" required>
+        </div>
+        <p id="confirm-hint" class="hint"></p>
+      </div>
+
+      <p id="form-error" class="form-error" role="alert"></p>
       <button type="submit" class="btn btn-primary btn-block" id="signup-submit">Let's moo-ve ▶</button>
     </form>
   </dialog>
@@ -132,9 +177,31 @@
       <div class="avatar avatar-lg" id="profile-avatar">?</div>
       <h2 id="profile-title">Player</h2>
       <p class="title-pill" id="profile-rank"></p>
-      <div class="profile-stats" id="profile-stats"></div>
-      <p class="muted small">Your player lives on this device. Signing out means you can't claim this name again.</p>
-      <button type="button" class="btn btn-danger btn-block" id="signout">Sign out</button>
+
+      <details class="password-box" id="pw-details">
+        <summary id="pw-summary">🔑 Change password</summary>
+        <form id="password-form" novalidate>
+          <input type="text" name="username" id="pw-username" autocomplete="username" hidden>
+          <p class="muted small" id="pw-lead"></p>
+          <div id="pw-current-group">
+            <label for="pw-current" class="label">Current password</label>
+            <div class="input-row"><input id="pw-current" type="password" autocomplete="current-password" maxlength="72"></div>
+          </div>
+          <label for="pw-new" class="label">New password</label>
+          <div class="input-row">
+            <input id="pw-new" type="password" autocomplete="new-password" maxlength="72" aria-describedby="pw-hint">
+            <button type="button" class="btn btn-ghost btn-sm reveal" data-reveal="pw-new" aria-controls="pw-new" aria-pressed="false">Show</button>
+          </div>
+          <label for="pw-confirm" class="label">Confirm new password</label>
+          <div class="input-row"><input id="pw-confirm" type="password" autocomplete="new-password" maxlength="72" aria-describedby="pw-hint"></div>
+          <p id="pw-hint" class="hint" role="alert"></p>
+          <button type="submit" class="btn btn-primary btn-block" id="pw-submit">Save password</button>
+        </form>
+      </details>
+
+      <div id="profile-stats"></div>
+      <p class="muted small" id="signout-note">Signing out only affects this device. Log back in anytime with your password.</p>
+      <button type="button" class="btn btn-danger btn-block" id="signout">Sign out on this device</button>
     </div>
   </dialog>
 
