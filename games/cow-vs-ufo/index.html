@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#3fa9f5">
+  <title>Cow vs UFO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="Cow vs UFO game"></canvas>
+    <div id="fx-layer" aria-hidden="true"></div>
+
+    <!-- In-game HUD -->
+    <div id="hud" class="hidden">
+      <div class="hud-top">
+        <div class="panel hud-food" title="Snacks eaten">
+          <span class="hud-icon">🌽</span>
+          <span id="hud-food">0/8</span>
+        </div>
+        <div class="panel hud-score">
+          <small>SCORE</small>
+          <span id="hud-score">0</span>
+          <span id="hud-combo" class="combo"></span>
+          <span id="hud-title" class="hud-title"></span>
+        </div>
+        <div class="panel hud-time" title="Survival time">
+          <span class="hud-icon">⏱️</span>
+          <span id="hud-time">0:00</span>
+        </div>
+      </div>
+      <div class="hud-row2">
+        <div id="hud-hearts" class="hearts" aria-label="Lives"></div>
+        <div id="hud-objective" class="objective"></div>
+        <button id="btn-pause" class="icon-btn" aria-label="Pause">⏸</button>
+      </div>
+      <div id="abduct-meter" class="meter hidden">
+        <div class="meter-label">ABDUCTION!</div>
+        <div class="meter-bar"><div id="abduct-fill"></div></div>
+      </div>
+      <div id="hidden-tag" class="tag hidden">🙈 Hiding in the barn…</div>
+      <div id="banner" class="banner"><span class="banner-icon"></span><span class="banner-text"></span></div>
+      <div id="level-intro" class="level-intro"></div>
+    </div>
+
+    <!-- Touch controls -->
+    <div id="touch" class="hidden">
+      <div id="stick" class="stick" aria-label="Move joystick">
+        <span class="stick-label">WIGGLE<br>HERE</span>
+        <div id="knob" class="knob">
+          <span class="nostril"></span><span class="nostril"></span>
+          <span id="knob-face" class="knob-face">😐</span>
+        </div>
+      </div>
+      <button id="btn-moo" class="touch-btn moo" aria-label="Moo"><span class="tb-icon">🐮</span><span class="tb-text">MOO</span><span class="bubble" id="moo-bubble">MOOO!</span></button>
+      <button id="btn-jump" class="touch-btn jump" aria-label="Jump"><span class="tb-icon">🦘</span><span class="tb-text" id="jump-text">BOING!</span></button>
+    </div>
+
+    <!-- Main menu -->
+    <div id="menu" class="screen">
+      <div class="menu-card">
+        <h1 class="logo"><span class="l1">COW</span><span class="vs">vs</span><span class="l2">UFO</span></h1>
+        <p class="tagline">A very serious farm survival simulator.</p>
+        <div class="player-bar">
+          <span class="pb-avatar">🐮</span>
+          <span class="pb-who"><small>Playing as</small><b id="menu-player">…</b><span id="menu-rank" class="pb-rank"></span></span>
+          <button class="pb-home" data-action="home" title="All games">🏠 Games</button>
+        </div>
+        <button class="btn big primary" data-action="continue" id="btn-continue" hidden>⏩ Continue</button>
+        <button class="btn big primary" data-action="play">▶ New game</button>
+        <div class="btn-row">
+          <button class="btn" data-action="howto">How to Play</button>
+          <button class="btn" data-action="wardrobe">Wardrobe</button>
+          <button class="btn" data-action="settings">Settings</button>
+        </div>
+        <div class="best">Best score: <b id="menu-best">0</b></div>
+        <p id="menu-offline" class="offline" hidden></p>
+      </div>
+    </div>
+    <button id="btn-sound" class="icon-btn sound-toggle" aria-label="Toggle sound">🔊</button>
+
+    <!-- How to play -->
+    <div id="howto" class="screen">
+      <div class="card">
+        <h2>How to Play</h2>
+        <ul class="howto-list">
+          <li><b>Eat snacks</b> 🍎🌽🍀 to clear the level. Golden corn on the balloon rafts is worth 5×.</li>
+          <li><b>Dodge the tractor beam.</b> A red ring means it's about to fire. Stay in the beam and you get abducted.</li>
+          <li><b>Hide in barns</b> to shake the UFO. Hide too long and it steals the roof.</li>
+          <li><b>Jump</b> over the spinning glove, fences and hay. Watch the red circles: anvils are coming.</li>
+          <li><b>Don't fall off</b> the island. Gravity is not your friend.</li>
+          <li><b>Moo</b> to scare chickens, including the very large one.</li>
+        </ul>
+        <div class="controls-grid">
+          <div><kbd>W A S D</kbd> / <kbd>Arrows</kbd><span>Move</span></div>
+          <div><kbd>Space</kbd><span>Jump</span></div>
+          <div><kbd>M</kbd> / <kbd>F</kbd><span>Moo</span></div>
+          <div><kbd>Drag</kbd> / <kbd>Q E</kbd><span>Rotate camera</span></div>
+          <div><kbd>Esc</kbd> / <kbd>P</kbd><span>Pause</span></div>
+          <div><kbd>📱</kbd><span>Joystick + buttons</span></div>
+        </div>
+        <button class="btn primary" data-action="back">Got it!</button>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings" class="screen">
+      <div class="card">
+        <h2>Settings</h2>
+        <label class="row"><span>Sound effects</span><input type="checkbox" id="set-sound"></label>
+        <label class="row"><span>Music</span><input type="checkbox" id="set-music"></label>
+        <label class="row"><span>Volume</span><input type="range" id="set-volume" min="0" max="1" step="0.05"></label>
+        <label class="row"><span>Camera speed</span><input type="range" id="set-sens" min="0.3" max="2" step="0.1"></label>
+        <label class="row"><span>Graphics</span>
+          <select id="set-quality">
+            <option value="auto">Auto</option>
+            <option value="high">High</option>
+            <option value="low">Low (faster)</option>
+          </select>
+        </label>
+        <p class="hint" id="quality-hint">Graphics changes apply after a reload.</p>
+        <button class="btn primary" data-action="back">Done</button>
+      </div>
+    </div>
+
+    <!-- Wardrobe -->
+    <div id="wardrobe" class="screen side">
+      <div class="card">
+        <h2>Wardrobe</h2>
+        <div class="picker">
+          <button class="icon-btn" data-action="skin-prev" aria-label="Previous skin">◀</button>
+          <div><small>Skin</small><b id="skin-name">Classic Moo</b></div>
+          <button class="icon-btn" data-action="skin-next" aria-label="Next skin">▶</button>
+        </div>
+        <div class="picker">
+          <button class="icon-btn" data-action="acc-prev" aria-label="Previous accessory">◀</button>
+          <div><small>Accessory</small><b id="acc-name">Nothing</b></div>
+          <button class="icon-btn" data-action="acc-next" aria-label="Next accessory">▶</button>
+        </div>
+        <button class="btn primary" data-action="back">Looking good</button>
+      </div>
+    </div>
+
+    <!-- Pause -->
+    <div id="pause" class="screen">
+      <div class="card narrow">
+        <h2>Paused</h2>
+        <p class="tagline">The UFO is also on a coffee break.</p>
+        <button class="btn primary" data-action="resume">Resume</button>
+        <button class="btn" data-action="restart">Restart level</button>
+        <button class="btn" data-action="settings">Settings</button>
+        <button class="btn danger" data-action="menu">Main menu</button>
+      </div>
+    </div>
+
+    <!-- Game over -->
+    <div id="gameover" class="screen">
+      <div class="card narrow">
+        <h2 class="bad">Game Over</h2>
+        <p id="go-message" class="funny"></p>
+        <div class="stats">
+          <div><small>Final score</small><b id="go-score">0</b></div>
+          <div><small>Best</small><b id="go-best">0</b></div>
+        </div>
+        <p class="earned">Title earned: <b id="go-title"></b></p>
+        <p id="go-newbest" class="newbest hidden">🏆 New best score!</p>
+        <p class="save-status"></p>
+        <button class="btn primary" data-action="restart">Try again</button>
+        <button class="btn" data-action="menu">Main menu</button>
+        <button class="btn" data-action="home">🏠 All games</button>
+      </div>
+    </div>
+
+    <!-- Victory -->
+    <div id="victory" class="screen">
+      <div class="card narrow">
+        <h2 class="good">Level Clear!</h2>
+        <p id="vic-message" class="funny"></p>
+        <div class="stats">
+          <div><small>Snacks</small><b id="vic-food">0</b></div>
+          <div><small>Golden corn</small><b id="vic-golden">0</b></div>
+          <div><small>Time</small><b id="vic-time">0:00</b></div>
+        </div>
+        <ul id="vic-bonus" class="bonus"></ul>
+        <div class="stats">
+          <div><small>Score</small><b id="vic-score">0</b></div>
+          <div><small>Best</small><b id="vic-best">0</b></div>
+        </div>
+        <p class="earned">Title earned: <b id="vic-title"></b></p>
+        <p class="save-status"></p>
+        <button class="btn primary" data-action="next">Next level ▶</button>
+        <button class="btn" data-action="replay">Replay level</button>
+        <button class="btn" data-action="menu">Main menu</button>
+      </div>
+    </div>
+
+    <div id="loading" class="loading"><div class="spinner">🐄</div><p>Inflating cows…</p></div>
+    <div id="error" class="loading hidden"><p>Your browser couldn't start WebGL, so the cows can't render. Try another browser or enable hardware acceleration.</p></div>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

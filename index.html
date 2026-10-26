@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Ridiculous browser games with serious leaderboards. Create a player name and start playing instantly.">
+  <meta name="theme-color" content="#0d1024">
+  <title>Web Games · Ridiculous games, serious leaderboards</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐄</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="bg-blobs" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="nav">
+    <a class="brand" href="/" aria-label="Web Games home">
+      <span class="brand-mark">🎮</span>
+      <span class="brand-text">WEB<b>GAMES</b></span>
+    </a>
+    <nav class="nav-links" aria-label="Main">
+      <a href="#games">Games</a>
+      <a href="#leaderboard">Leaderboard</a>
+    </nav>
+    <div id="player-slot" class="player-slot">
+      <button class="btn btn-primary btn-sm" data-open-signup>Create player</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot"></span> Free · No downloads · Works on phones</p>
+        <h1>Ridiculous games.<br><span class="grad">Serious leaderboards.</span></h1>
+        <p class="lead">Pick a player name, jump into a game, and fight your way up the rankings. Your scores and unlocked levels are saved to your name.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="/games/cow-vs-ufo/" data-play="cow-vs-ufo">▶ Play Cow vs UFO</a>
+          <a class="btn btn-ghost btn-lg" href="#leaderboard">View leaderboard</a>
+        </div>
+        <dl class="stats">
+          <div><dt>Players</dt><dd id="stat-players">–</dd></div>
+          <div><dt>Games</dt><dd>1</dd></div>
+          <div><dt>Cows harmed</dt><dd>0<sup>*</sup></dd></div>
+        </dl>
+        <p class="footnote">*Emotionally, maybe a few.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="ufo">🛸<div class="beam"></div></div>
+        <div class="cow">🐄</div>
+        <div class="island"></div>
+      </div>
+    </section>
+
+    <section id="games" class="section">
+      <div class="section-head">
+        <h2>Games</h2>
+        <p>More nonsense is on the way.</p>
+      </div>
+      <div class="games-grid">
+        <article class="game-card featured">
+          <a class="thumb" href="/games/cow-vs-ufo/" data-play="cow-vs-ufo" aria-label="Play Cow vs UFO">
+            <img src="/thumbnails/cow-vs-ufo.jpg" alt="A cartoon cow on a floating farm island under a UFO" loading="lazy" onerror="this.remove()">
+            <span class="badge">NEW</span>
+          </a>
+          <div class="card-body">
+            <div class="card-title">
+              <h3>Cow vs UFO</h3>
+              <span class="tags"><span>3D</span><span>Action</span><span>📱 Mobile</span></span>
+            </div>
+            <p>You are a cow. A UFO wants you. Eat snacks, dodge tractor beams, flying anvils and a giant revenge chicken.</p>
+            <div class="card-progress" id="progress-cow-vs-ufo" hidden></div>
+            <a class="btn btn-primary" href="/games/cow-vs-ufo/" data-play="cow-vs-ufo">Play now</a>
+          </div>
+        </article>
+        <article class="game-card soon">
+          <div class="thumb soon-thumb">🐐</div>
+          <div class="card-body">
+            <div class="card-title"><h3>Goat Simulator Simulator</h3><span class="tags"><span>Coming soon</span></span></div>
+            <p>A goat simulating a goat simulator. Our lawyers are still reading it.</p>
+          </div>
+        </article>
+        <article class="game-card soon">
+          <div class="thumb soon-thumb">🦆</div>
+          <div class="card-body">
+            <div class="card-title"><h3>Duck Tax Evasion</h3><span class="tags"><span>Coming soon</span></span></div>
+            <p>Waddle past the auditors. Quack responsibly.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="leaderboard" class="section">
+      <div class="section-head">
+        <h2>Leaderboard</h2>
+        <p>Cow vs UFO · top 10 all-time</p>
+      </div>
+      <div class="board">
+        <table>
+          <thead><tr><th>#</th><th>Player</th><th class="hide-sm">Title</th><th class="num">Level</th><th class="num">Best score</th></tr></thead>
+          <tbody id="board-body"><tr><td colspan="5" class="muted center">Loading the hall of fame…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Made with three.js, SQLite and an unreasonable amount of cow puns.</p>
+  </footer>
+
+  <!-- Create player dialog -->
+  <dialog id="signup" class="modal" aria-labelledby="signup-title">
+    <form id="signup-form" method="dialog" novalidate>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+      <div class="modal-icon">🐮</div>
+      <h2 id="signup-title">Create your player</h2>
+      <p class="muted">Your scores and unlocked levels are saved under this name. Names are unique, so choose wisely.</p>
+      <label for="username" class="label">Player name</label>
+      <div class="input-row">
+        <input id="username" name="username" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="16" placeholder="e.g. SirMoosalot42" required>
+        <button type="button" class="btn btn-ghost btn-sm" id="suggest" title="Suggest a silly name">🎲 Suggest</button>
+      </div>
+      <p id="username-hint" class="hint">3–16 letters, numbers or _, starting with a letter.</p>
+      <button type="submit" class="btn btn-primary btn-block" id="signup-submit">Let's moo-ve ▶</button>
+    </form>
+  </dialog>
+
+  <!-- Profile dialog -->
+  <dialog id="profile" class="modal" aria-labelledby="profile-title">
+    <div class="modal-inner">
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+      <div class="avatar avatar-lg" id="profile-avatar">?</div>
+      <h2 id="profile-title">Player</h2>
+      <p class="title-pill" id="profile-rank"></p>
+      <div class="profile-stats" id="profile-stats"></div>
+      <p class="muted small">Your player lives on this device. Signing out means you can't claim this name again.</p>
+      <button type="button" class="btn btn-danger btn-block" id="signout">Sign out</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="/src/home/main.js"></script>
+</body>
+</html>
